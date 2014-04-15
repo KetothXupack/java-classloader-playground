@@ -3,6 +3,8 @@ package org.nohope.compiler;
 import javax.tools.*;
 import java.io.IOException;
 import java.security.SecureClassLoader;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:ketoth.xupack@gmail.com">Ketoth Xupack</a>
@@ -10,10 +12,9 @@ import java.security.SecureClassLoader;
  */
 class ClassFileManager extends ForwardingJavaFileManager<StandardJavaFileManager> {
     /**
-     * Instance of JavaClassObject that will store the
-     * compiled bytecode of our class
+     * Storage for compiled bytecode of our classes
      */
-    private JavaClassObject classObject;
+    private final Map<String, JavaClassObject> lookup = new HashMap<>();
 
     /**
      * Will initialize the manager with the specified
@@ -37,7 +38,12 @@ class ClassFileManager extends ForwardingJavaFileManager<StandardJavaFileManager
         return new SecureClassLoader(ClassLoader.getSystemClassLoader().getParent()) {
 
             @Override
-            protected Class<?> findClass(final String name) {
+            protected Class<?> findClass(final String name) throws ClassNotFoundException {
+                if (!lookup.containsKey(name)) {
+                    throw new ClassNotFoundException(name);
+                }
+
+                final JavaClassObject classObject = lookup.get(name);
                 final byte[] b = classObject.getBytes();
                 return super.defineClass(name, classObject.getBytes(), 0, b.length);
             }
@@ -53,7 +59,8 @@ class ClassFileManager extends ForwardingJavaFileManager<StandardJavaFileManager
                                                final String className,
                                                final JavaFileObject.Kind kind,
                                                final FileObject sibling) throws IOException {
-        classObject = new JavaClassObject(className, kind);
-        return classObject;
+        final JavaClassObject object = new JavaClassObject(className, kind);
+        lookup.put(className, object);
+        return object;
     }
 }

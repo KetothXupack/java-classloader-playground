@@ -18,7 +18,7 @@ class JavaClassObject extends SimpleJavaFileObject implements AutoCloseable {
      * byte array out of it
      * and put it in the memory as an instance of our class.
      */
-    protected final ByteArrayOutputStream bos;
+    private final ByteArrayOutputStream bos;
 
     /**
      * Registers the compiled class object under URI
@@ -55,7 +55,7 @@ class JavaClassObject extends SimpleJavaFileObject implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         bos.close();
     }
 }

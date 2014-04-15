@@ -19,12 +19,10 @@ class CharSequenceJavaFileObject extends SimpleJavaFileObject {
      * internal "content" variable and register it as a
      * source code, using a URI containing the class full name
      *
-     * @param className
-     *            name of the public class in the source code
-     * @param content
-     *            source code to compile
+     * @param className name of the public class in the source code
+     * @param content source code to compile
      */
-    public CharSequenceJavaFileObject(final String className, final CharSequence content) {
+    CharSequenceJavaFileObject(final String className, final CharSequence content) {
         super(URI.create("string:///" + className.replace('.', '/') + Kind.SOURCE.extension), Kind.SOURCE);
         this.content = content;
     }

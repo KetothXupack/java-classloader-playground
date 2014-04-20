@@ -1,8 +1,9 @@
 package org.nohope.compiler;
 
+import org.nohope.bytecode.core.HidingClassLoader;
+
 import javax.tools.*;
 import java.io.IOException;
-import java.security.SecureClassLoader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,20 +11,25 @@ import java.util.Map;
  * @author <a href="mailto:ketoth.xupack@gmail.com">Ketoth Xupack</a>
  * @since 2014-04-14 20:16
  */
-class ClassFileManager extends ForwardingJavaFileManager<StandardJavaFileManager> {
+public class ClassFileManager extends ForwardingJavaFileManager<StandardJavaFileManager> {
     /**
      * Storage for compiled bytecode of our classes
      */
     private final Map<String, JavaClassObject> lookup = new HashMap<>();
+    private final ClassLoader parentClassLoader;
 
     /**
      * Will initialize the manager with the specified
      * standard java file manager
-     *
-     * @param standardManager
      */
-    ClassFileManager(final StandardJavaFileManager standardManager) {
+    ClassFileManager(final StandardJavaFileManager standardManager,
+                     final ClassLoader parentClassLoader) {
         super(standardManager);
+        this.parentClassLoader = parentClassLoader;
+    }
+
+    ClassFileManager(final StandardJavaFileManager standardManager) {
+        this(standardManager, ClassLoader.getSystemClassLoader());
     }
 
     /**
@@ -34,20 +40,18 @@ class ClassFileManager extends ForwardingJavaFileManager<StandardJavaFileManager
      * the JavaClassObject, and returns the Class for it
      */
     @Override
-    public ClassLoader getClassLoader(final Location location) {
-        return new SecureClassLoader(ClassLoader.getSystemClassLoader().getParent()) {
+    public HidingClassLoader getClassLoader(final Location location) {
+        return HidingClassLoader.newBuilder(parentClassLoader)
+                .addByteCode(getCompiledCode().values())
+                .build();
+    }
 
-            @Override
-            protected Class<?> findClass(final String name) throws ClassNotFoundException {
-                if (!lookup.containsKey(name)) {
-                    throw new ClassNotFoundException(name);
-                }
-
-                final JavaClassObject classObject = lookup.get(name);
-                final byte[] b = classObject.getBytes();
-                return super.defineClass(name, classObject.getBytes(), 0, b.length);
-            }
-        };
+    public Map<String, byte[]> getCompiledCode() {
+        final Map<String, byte[]> result = new HashMap<>();
+        for (final Map.Entry<String, JavaClassObject> e : lookup.entrySet()) {
+            result.put(e.getKey(), e.getValue().getBytes());
+        }
+        return result;
     }
 
     /**

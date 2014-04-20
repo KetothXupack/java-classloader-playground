@@ -1,0 +1,107 @@
+<mock>
+    <version id="version1">
+        <source name="com.test.Example">
+            package com.test;
+            import org.nohope.bytecode.migration.Migratable;
+            import java.io.Serializable;
+
+            @Migratable(uniqueId = "21d7ef3f-e890-4148-ba1f-1aa9360a5697",
+                        dependencies = {A.class, B.class})
+            public class Example implements Serializable {
+                private static final long serialVersionUID = 1L;
+
+                private final A param1;
+                private final B param2;
+
+                public Example(final int param1, final A param2) {
+                    this.param1 = param2;
+                    this.param2 = new B(param1);
+                }
+
+                public A getA() {
+                    return param1;
+                }
+
+                public B getB() {
+                    return param2;
+                }
+            }
+        </source>
+        <source name="com.test.A">
+            package com.test;
+            import java.io.Serializable;
+            public class A implements Serializable {
+                private static final long serialVersionUID = 1L;
+
+                private final String param;
+
+                public A(final String param) {
+                    this.param = param;
+                }
+
+                public String getParam() {
+                    return param;
+                }
+            }
+        </source>
+        <source name="com.test.B">
+            package com.test;
+            import java.io.Serializable;
+            public class B implements Serializable {
+                private static final long serialVersionUID = 1L;
+
+                private final int param;
+
+                public B(final int param) {
+                    this.param = param;
+                }
+
+                public int getParam() {
+                    return param;
+                }
+            }
+        </source>
+    </version>
+    <version id="version2">
+        <source name="com.test.Example">
+            package com.test;
+            import org.nohope.bytecode.migration.Migratable;
+            import java.io.Serializable;
+
+            @Migratable(uniqueId = "21d7ef3f-e890-4148-ba1f-1aa9360a5697",
+                        dependencies = {C.class})
+            public class Example implements Serializable {
+                private static final long serialVersionUID = 2L;
+
+                private final C param;
+
+                public Example(final C param) {
+                    this.param = param;
+                }
+            }
+        </source>
+        <source name="com.test.C">
+            package com.test;
+            import java.io.Serializable;
+            public class C implements Serializable {
+                private static final long serialVersionUID = 2L;
+
+                private final int param1;
+                private final String param2;
+
+                public C(final int param1, final String param2) {
+                    this.param1 = param1;
+                    this.param2 = param2;
+                }
+
+                public int getParam1() {
+                    return param1;
+                }
+
+                public String getParam2() {
+                    return param2;
+                }
+            }
+        </source>
+    </version>
+</mock>

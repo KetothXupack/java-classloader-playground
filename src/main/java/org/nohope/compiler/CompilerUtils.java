@@ -19,7 +19,7 @@ public final class CompilerUtils {
         return new ClassFileManager(compiler.getStandardFileManager(null, null, null));
     }
 
-    public static JavaFileObject sourceToFileObject(final String fqdn, final CharSequence source) {
-        return new CharSequenceJavaFileObject(fqdn, source);
+    public static JavaFileObject sourceToFileObject(final String classFQN, final CharSequence source) {
+        return new CharSequenceJavaFileObject(classFQN, source);
     }
 }

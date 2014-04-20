@@ -10,7 +10,7 @@ import java.net.URI;
  * @author <a href="mailto:ketoth.xupack@gmail.com">Ketoth Xupack</a>
  * @since 2014-04-14 20:17
  */
-class JavaClassObject extends SimpleJavaFileObject implements AutoCloseable {
+public class JavaClassObject extends SimpleJavaFileObject {
 
     /**
      * Byte code created by the compiler will be stored in this
@@ -52,10 +52,5 @@ class JavaClassObject extends SimpleJavaFileObject implements AutoCloseable {
     @Override
     public OutputStream openOutputStream() throws IOException {
         return bos;
-    }
-
-    @Override
-    public void close() throws IOException {
-        bos.close();
     }
 }

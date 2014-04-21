@@ -1,9 +1,8 @@
 About
 =====
 
-General java object migration utility which makes it possible to persist/restore java objects regardless of possible
-persistent objects code modifications. Utility extensively uses custom class loaders and bytecode transformation
-internally.
+General java object migration utility which allows to persist/restore java objects regardless of possible
+persistent objects code modifications.
 
 Examples
 ========
@@ -66,12 +65,11 @@ public class V1ToV2Migration implements AbstractTypedMigration<$.com.test.Exampl
 };
 ```
 
-and update bytecode repository.
+and update your bytecode repository.
 
-Now you can easily migrate old object to a new one:
+Now you can easily migrate old version of object to a new one:
 
 ```java
-
 Repository repository = ... // migration/bytecode repository
 SerializationProvider delegate = ... // original serializator used to
 
@@ -79,4 +77,3 @@ InputStream is = ... // stream with old version of Example object
 Migrator migrator = new Migrator(delegate, repository);
 RenamedExample obj = migrator.readObject(is, RenamedExample.class);
 ```
-

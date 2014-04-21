@@ -1,9 +1,9 @@
 About
 =====
 
-General java object migration utility which makes possible to persist/restore java objects regardless of possible
+General java object migration utility which makes it possible to persist/restore java objects regardless of possible
 persistent objects code modifications. Utility extensively uses custom class loaders and bytecode transformation
-under the
+internally.
 
 Examples
 ========

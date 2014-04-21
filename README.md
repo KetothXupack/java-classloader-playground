@@ -79,6 +79,6 @@ SerializationProvider delegate = ... // original serializator used to
 
 InputStream is = // stream with old verion of Example object
 Migrator migrator = new Migrator(delegate, repository);
-RenamedExample obj =migrator.readObject(is, RenamedExample.class);
+RenamedExample obj = migrator.readObject(is, RenamedExample.class);
 ```
 

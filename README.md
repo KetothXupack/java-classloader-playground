@@ -27,8 +27,6 @@ public class Example implements Serializable {
 which was modified to something like this:
 
 ```java
-import javax.annotation.Nonnull;
-
 import org.nohope.bytecode.migration.Migratable;
 import java.io.Serializable;
 
@@ -45,7 +43,7 @@ All you need is to write migration script (java/groovy is supported)
 
 ```java
 import org.nohope.bytecode.migration.TypedMigration;
-import $.com.test.Example; // old version (1L) of Example class prefixed with ;
+import $.com.test.Example;        // old version (1L) of Example class prefixed with $ to avoid class names clash
 import com.test.RenamedExample;   // current version (2L) of Example class
 
 public class V1ToV2Migration implements AbstractTypedMigration<$.com.test.Example> {

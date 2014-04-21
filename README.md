@@ -75,7 +75,7 @@ Now you can easily migrate old object to a new one:
 Repository repository = ... // migration/bytecode repository
 SerializationProvider delegate = ... // original serializator used to
 
-InputStream is = // stream with old verion of Example object
+InputStream is = ... // stream with old version of Example object
 Migrator migrator = new Migrator(delegate, repository);
 RenamedExample obj = migrator.readObject(is, RenamedExample.class);
 ```

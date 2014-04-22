@@ -1,4 +1,4 @@
-package org.nohope.bytecode.core;
+package org.nohope.serialization;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;

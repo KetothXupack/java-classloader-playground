@@ -14,7 +14,7 @@ import org.nohope.bytecode.migration.TypedMigration;
 import org.nohope.compiler.ClassFileManager;
 import org.nohope.compiler.CompilerTestUtils;
 import org.nohope.compiler.CompilerUtils;
-import org.nohope.serialization.ThreadContextClassLoaderAwareObjectInputStream;
+import org.nohope.serialization.*;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -97,23 +97,64 @@ public class ClassloadingTest {
     }
 
     @Test
+    public void inPlaceRenaming() throws Exception {
+        final Mock mock = readMock("general-migration");
+
+        final ClassFileManager v1manager = CompilerTestUtils.compileCode(mock.getSources("version1"));
+
+        final HidingClassLoader v1classLoader = v1manager.getClassLoader(null);
+        final Serializable v1instance = (Serializable) new GroovyShell(v1classLoader).evaluate(new StringBuilder()
+                .append("import com.test.A;")
+                .append("import com.test.Example;")
+                .append("return new Example(123, new A(\"test\"));")
+                .toString());
+
+        final InputStream serialized;
+        {
+            final SerializationProvider provider = new JavaProvider();
+            final ByteArrayOutputStream out = new ByteArrayOutputStream();
+            provider.writeObject(out, v1instance);
+            serialized = new ByteArrayInputStream(out.toByteArray());
+        }
+
+        final Map<String, byte[]> v1renamedBytecode = toVirtualPackage(v1classLoader.getClassesByteCode().values());
+
+        final HidingClassLoader modified = HidingClassLoader.newBuilder().addByteCode(v1renamedBytecode.values()).build();
+        final Map<String, Class<?>> substitutions = Maps.transformValues(v1renamedBytecode, new Function<byte[], Class<?>>() {
+            @Override
+            public Class<?> apply(final byte[] input) {
+                try {
+                    return modified.loadClass(ByteCodeUtils.getCanonicalName(input));
+                } catch (final ClassNotFoundException e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        });
+
+        final Object v1Transformed = ClassLoaderUtils.runUsingClassLoader(HidingClassLoader.merge(modified, v1classLoader), new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                try (final ObjectInput in = new RenamingObjectInputStream(serialized, substitutions)) {
+                    return in.readObject();
+                }
+            }
+        });
+
+        assertEquals("$.com.test.Example", v1Transformed.getClass().getCanonicalName());
+    }
+
+
+    @Test
     public void mockCompile() throws Exception {
         final Mock mock = readMock("general-migration");
 
         final ClassFileManager v1manager = CompilerTestUtils.compileCode(mock.getSources("version1"));
         final ClassFileManager v2manager = CompilerTestUtils.compileCode(mock.getSources("version2"));
 
-        final HidingClassLoader v1classLoader = (HidingClassLoader) v1manager.getClassLoader(null);
-        final HidingClassLoader v2classLoader = (HidingClassLoader) v2manager.getClassLoader(null);
+        final HidingClassLoader v1classLoader = v1manager.getClassLoader(null);
+        final HidingClassLoader v2classLoader = v2manager.getClassLoader(null);
 
-        final Map<String, byte[]> v1renamedBytecode = renameTypes(
-                v1classLoader.getClassesByteCode().values(),
-                new Function<String, String>() {
-                    @Override
-                    public String apply(final String input) {
-                        return "$/" + input;
-                    }
-                });
+        final Map<String, byte[]> v1renamedBytecode = toVirtualPackage(v1classLoader.getClassesByteCode().values());
 
         // make sure we don't have intersects in class names
         assertTrue(Sets.intersection(
@@ -168,6 +209,36 @@ public class ClassloadingTest {
                 (TypedMigration<Serializable>) migrationClass.newInstance();
         final Serializable v2instance = migration.migrate(v1instancePrepared);
         // TODO: remap to $ version, and continue...
+    }
+
+    @Test
+    public void classForName() throws Exception {
+        final Mock mock = readMock("general-migration");
+
+        final ClassFileManager v1manager = CompilerTestUtils.compileCode(mock.getSources("version1"));
+        final Map<String, byte[]> v1renamedBytecode =
+                toVirtualPackage(v1manager.getClassLoader(null).getClassesByteCode().values());
+
+        final HidingClassLoader v1ModifiedClassLoader =
+                ClassLoaderUtils.classLoader(v1renamedBytecode.values());
+
+        final Class<?> clazz = v1ModifiedClassLoader.loadClass("$.com.test.Example");
+        assertEquals("$.com.test.Example", clazz.getCanonicalName());
+
+        try {
+            ClassLoaderUtils.runUsingClassLoader(v1ModifiedClassLoader, new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    return Class.forName("$.com.test.Example");
+                }
+            });
+            fail();
+        } catch (final InvocationTargetException e) {
+            final Throwable cause = e.getCause();
+            assertNotNull(cause);
+            assertTrue(cause instanceof ClassNotFoundException);
+            assertEquals("$.com.test.Example", cause.getMessage());
+        }
     }
 
     @Test
@@ -236,7 +307,7 @@ public class ClassloadingTest {
 
         final ClassFileManager manager = CompilerTestUtils.compileCode(sources);
 
-        final HidingClassLoader classLoader = (HidingClassLoader) manager.getClassLoader(null);
+        final HidingClassLoader classLoader = manager.getClassLoader(null);
 
         final Class<?> classA = classLoader.loadClass("com.test.A");
         final Class<?> classB = classLoader.loadClass("com.test.B");
@@ -287,6 +358,17 @@ public class ClassloadingTest {
         public String apply(final String name) {
             return rules.get(name);
         }
+    }
+
+    private static Map<String, byte[]> toVirtualPackage(final Iterable<byte[]> bytecode) {
+        return renameTypes(
+                bytecode,
+                new Function<String, String>() {
+                    @Override
+                    public String apply(final String input) {
+                        return "$/" + input;
+                    }
+                });
     }
 
     private static Map<String, byte[]> renameTypes(final Iterable<byte[]> bytecode,

@@ -140,7 +140,7 @@ public class Migrator implements SerializationProvider {
         private final Migration migration;
         private final Serializable object;
 
-        private ApplyMigration(Migration migration, Serializable object) {
+        private ApplyMigration(final Migration migration, final Serializable object) {
             this.migration = migration;
             this.object = object;
         }
